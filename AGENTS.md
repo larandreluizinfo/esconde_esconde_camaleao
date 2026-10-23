@@ -36,6 +36,17 @@ git push origin main
 - Branch de publicação: `main`
 - Diretório de publicação: `/` (raiz)
 
+## Estrutura
+
+- `index.html` — interface do jogo
+- `css/style.css` — estilos e responsividade
+- `js/maps.js` — cenários em Canvas 2D e paletas de camuflagem
+- `js/game.js` — votação, sorteio, camuflagem, busca e placar
+
+Projeto sem build e sem dependências: basta abrir `index.html` (ou servir a pasta como
+estático). Ao alterar o jogo, valide o fluxo completo em desktop e celular antes de
+comitar: votação, sorteio, 5 camuflagens, busca, vitória do buscador e vitória por tempo.
+
 ## Autores
 
 Rafael, João e Elisa.

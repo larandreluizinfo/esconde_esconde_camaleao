@@ -2,37 +2,124 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Esconde-Esconde Camaleão</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #0f2b1e;
-      color: #eaf5ee;
-      text-align: center;
-      padding: 2rem;
-    }
-    main { max-width: 40rem; }
-    h1 { font-size: clamp(1.8rem, 5vw, 3rem); margin: 0 0 .5rem; }
-    p { line-height: 1.6; opacity: .85; }
-    ul { list-style: none; padding: 0; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    a { color: #7ee2a8; }
-  </style>
+  <meta name="description" content="Jogo de esconde-esconde com camuflagem: 5 escondedores, 1 buscador, votação de mapa e sorteio a cada rodada." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦎</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">🦎</span><span>Esconde-Esconde <b>Camaleão</b></span></div>
+    <div class="hud">
+      <span class="chip" id="hud-round">Rodada 1</span>
+      <span class="chip ghost" id="hud-phase">Configuração</span>
+      <span class="timer idle" id="hud-timer">--:--</span>
+    </div>
+    <button class="btn ghost small" id="btn-reset">Reiniciar</button>
+  </header>
+
   <main>
-    <h1>Esconde-Esconde Camaleão</h1>
-    <p>Site do projeto publicado com GitHub Pages.</p>
-    <ul>
-      <li><a href="./README.md">README</a></li>
-      <li><a href="./AGENTS.md">AGENTS</a></li>
-    </ul>
-    <p><small>Autores: Rafael, João e Elisa</small></p>
+    <!-- ============ CONFIGURAÇÃO ============ -->
+    <section id="screen-setup" class="screen active">
+      <div class="panel setup-panel">
+        <p class="eyebrow">Jogo de camuflagem</p>
+        <h1>Esconde-Esconde <span class="grad">Camaleão</span></h1>
+        <p class="muted">
+          5 escondedores, 1 buscador. Votem no mapa, sorteiem quem busca e desapareçam na paisagem.
+        </p>
+
+        <div class="rules">
+          <div class="rule"><b>1</b><span>Votação do mapa</span><small>Todos votam em segredo no cenário da rodada.</small></div>
+          <div class="rule"><b>2</b><span>Sorteio do buscador</span><small>Um dos 6 jogadores é sorteado.</small></div>
+          <div class="rule"><b>3</b><span>60s para se camuflar</span><small>Os 5 escondedores escolhem onde e como se esconder.</small></div>
+          <div class="rule"><b>4</b><span>3 minutos de busca</span><small>O buscador precisa encontrar todos.</small></div>
+        </div>
+
+        <h2 class="small-title">Jogadores</h2>
+        <div id="player-inputs" class="player-inputs"></div>
+
+        <div class="actions">
+          <button id="btn-start" class="btn primary big">Começar o jogo →</button>
+        </div>
+        <p class="muted tiny">Jogue em um único dispositivo, passando-o de jogador para jogador.</p>
+      </div>
+      <footer class="foot">
+        Autores: Rafael, João e Elisa ·
+        <a href="https://github.com/larandreluizinfo/esconde_esconde_camaleao" target="_blank" rel="noopener">GitHub</a>
+      </footer>
+    </section>
+
+    <!-- ============ VOTAÇÃO ============ -->
+    <section id="screen-vote" class="screen">
+      <div class="panel wide-panel">
+        <p class="eyebrow" id="vote-eyebrow">Votação de mapa</p>
+        <h2 id="vote-title">Voto de…</h2>
+        <p class="muted" id="vote-sub">Escolha o mapa desta rodada. O voto é secreto.</p>
+        <div id="vote-cards" class="cards"></div>
+        <div id="vote-actions" class="actions"></div>
+      </div>
+    </section>
+
+    <!-- ============ SORTEIO ============ -->
+    <section id="screen-draw" class="screen">
+      <div class="panel wide-panel">
+        <p class="eyebrow">Sorteio do buscador</p>
+        <h2>Quem vai buscar?</h2>
+        <p class="muted">O sorteio é aleatório. Os outros 5 jogadores serão os escondedores.</p>
+        <div id="draw-names" class="name-grid"></div>
+        <p id="draw-result" class="draw-result" aria-live="polite"></p>
+        <div class="actions" id="draw-actions">
+          <button id="btn-draw" class="btn primary">Girar o sorteio</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ JOGO ============ -->
+    <section id="screen-play" class="screen">
+      <div class="play-grid">
+        <div class="board-wrap">
+          <canvas id="board" width="960" height="620" aria-label="Mapa do jogo"></canvas>
+          <p class="board-hint" id="board-hint">Posicione seu camaleão</p>
+        </div>
+
+        <aside class="side" id="side-hide">
+          <div class="side-card">
+            <p class="eyebrow">Camuflagem</p>
+            <h3>Vez de <span id="hide-name">—</span></h3>
+            <p class="muted small">
+              Mova o camaleão pelo mapa: clique, arraste ou use as setas do teclado.
+              Escolha uma cor que se misture com o cenário — o buscador não pode ver.
+            </p>
+            <div class="field">
+              <span class="label">Cor da camuflagem</span>
+              <div id="hide-colors" class="swatches"></div>
+              <label class="custom-color">Cor livre <input type="color" id="hide-color" value="#2f6b3a" /></label>
+            </div>
+            <label class="check"><input type="checkbox" id="hide-pattern" /> Manchas (padrão)</label>
+            <p class="tiny muted">Todos os 5 têm 60 segundos no total. Não deixe o buscador ver a tela.</p>
+            <button id="btn-hide-confirm" class="btn primary wide">Estou camuflado ✓</button>
+          </div>
+        </aside>
+
+        <aside class="side" id="side-seek">
+          <div class="side-card">
+            <p class="eyebrow">Busca</p>
+            <h3><span id="seek-name">Buscador</span>, encontre todos!</h3>
+            <p class="muted small">Clique no mapa para procurar. Você tem 3 minutos.</p>
+            <div class="found-count"><span id="found-count">0</span><em>/5 encontrados</em></div>
+            <ul id="seek-list" class="seek-list"></ul>
+            <p class="tiny muted">Encontre os 5 antes do tempo acabar para vencer a rodada.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
   </main>
+
+  <div id="overlay" class="overlay"></div>
+  <div id="toast" class="toast"></div>
+
+  <script src="js/maps.js"></script>
+  <script src="js/game.js"></script>
 </body>
 </html>
